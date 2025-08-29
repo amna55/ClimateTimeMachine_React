@@ -1,24 +1,9 @@
-# Welcome to your Lovable project
+# Climate Time Machine
+interactive global climate heatmap built with React (TS) & Rust, visualizing MODIS satellite data from 2000–2025. Users can explore land surface temperature, anomalies, and absolute anomalies with toggleable layers for base maps, borders, and climate data.
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/b5b620da-9c85-410e-b952-b956f160c55b
-
 ## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/b5b620da-9c85-410e-b952-b956f160c55b) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
 Follow these steps:
 
@@ -60,14 +45,8 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/b5b620da-9c85-410e-b952-b956f160c55b) and click on Share -> Publish.
 
-## Can I connect a custom domain to my Lovable project?
+https://github.com/user-attachments/assets/2a31d5ac-da7d-44f1-8950-430ece9f1e60
 
-Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)

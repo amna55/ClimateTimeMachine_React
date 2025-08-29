@@ -1,16 +1,25 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/layout/Navigation";
-import GlobeVisualization from "@/components/climate/GlobeVisualization";
 import HeatAlert from "@/components/climate/HeatAlert";
+import HeatAlertList from "@/components/climate/heatalertlist"; // adjust path as needed
 import SearchBar from "@/components/climate/SearchBar";
 import QuickSelect from "@/components/climate/QuickSelect";
 import TemperatureDisplay from "@/components/climate/TemperatureDisplay";
 import { ArrowRight, Globe, Zap, TrendingUp, AlertTriangle } from "lucide-react";
 import climateHero from "@/assets/climate-hero.jpg";
+import { fetchTemperature } from "@/components/climate/current_temp";
+
+
 
 const Index = () => {
+  const [currentTemp, setCurrentTemp] = useState<number | null>(null);
+  const [locationName, setLocationName] = useState<string>("");
+  const [tempError, setTempError] = useState<string | null>(null);
+  const [loadingTemp, setLoadingTemp] = useState<boolean>(false);
+
   const heatAlerts = [
     { location: "Phoenix, AZ", temperature: 47, severity: "extreme" as const, time: "2 hours ago" },
     { location: "Delhi, India", temperature: 44, severity: "warning" as const, time: "4 hours ago" },
@@ -23,21 +32,114 @@ const Index = () => {
     { current: -12.3, previous: -10.1, location: "Arctic Average" },
   ];
 
+  useEffect(() => {
+    const loadTempForUser = async () => {
+      if (!navigator.geolocation) {
+        setTempError("Geolocation is not supported by your browser.");
+        setLocationName("Unknown Location");
+        return;
+      }
+
+      setLoadingTemp(true);
+
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              timeout: 10000,
+              maximumAge: 60000,
+              enableHighAccuracy: true
+            }
+          );
+        });
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Fetch temperature
+        try {
+          const temp = await fetchTemperature(lat, lng);
+          setCurrentTemp(temp);
+          setTempError(null);
+        } catch (tempError) {
+          console.error("Temperature fetch failed:", tempError);
+          setTempError("Failed to get temperature data");
+        }
+
+        // Fetch location name
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            {
+              headers: {
+                'User-Agent': 'Climate-Time-Machine/1.0 (contact@yourdomain.com)'
+              }
+            }
+          );
+          
+          if (!res.ok) throw new Error('Failed to fetch location name');
+          
+          const data = await res.json();
+          setLocationName(
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county ||
+            data.address?.state ||
+            data.address?.country ||
+            `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+          );
+        } catch (geoError) {
+          console.warn("Reverse geocoding failed:", geoError);
+          setLocationName(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        }
+
+      } catch (error) {
+        console.error("Geolocation error:", error);
+        setTempError(
+          error instanceof GeolocationPositionError 
+            ? getGeolocationError(error.code) 
+            : "Failed to get your location"
+        );
+        setLocationName("Unknown Location");
+      } finally {
+        setLoadingTemp(false);
+      }
+    };
+
+    loadTempForUser();
+  }, []);
+
+  const getGeolocationError = (code: number) => {
+    switch(code) {
+      case GeolocationPositionError.PERMISSION_DENIED:
+        return "Location access was denied. Please enable permissions.";
+      case GeolocationPositionError.POSITION_UNAVAILABLE:
+        return "Location information is unavailable.";
+      case GeolocationPositionError.TIMEOUT:
+        return "The request to get your location timed out.";
+      default:
+        return "Error getting your location.";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90" />
         <div className="absolute inset-0 opacity-20">
-          <img 
-            src={climateHero} 
-            alt="Climate visualization" 
+          <img
+            src={climateHero}
+            alt="Climate visualization"
             className="w-full h-full object-cover"
           />
         </div>
-        
+
         <div className="relative container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left Content */}
@@ -51,18 +153,18 @@ const Index = () => {
                   <span className="text-foreground">Machine</span>
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-lg">
-                  Explore real-time global temperature data, track climate patterns, 
+                  Explore real-time global temperature data, track climate patterns,
                   and witness how our planet's climate has evolved over time.
                 </p>
               </div>
 
               {/* Search & Quick Actions */}
               <div className="space-y-4">
-                <SearchBar 
+                <SearchBar
                   placeholder="Search any location..."
                   onSearch={(query) => console.log("Searching:", query)}
                 />
-                <QuickSelect 
+                <QuickSelect
                   preset={["Compare Cities", "Heatwave Timeline", "Temperature Trends"]}
                   onSelect={(preset) => console.log("Selected:", preset)}
                 />
@@ -86,55 +188,68 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Right Globe */}
+            {/* Right Globe & Live Temperature - Maintained original structure */}
             <div className="relative">
-              <GlobeVisualization className="h-[500px] relative animate-fade-in-up" />
-              <div className="absolute bottom-4 left-4 right-4 bg-card/80 backdrop-blur-sm rounded-lg p-4 border border-primary/20">
-                <h3 className="font-semibold text-sm mb-2">Live Global Temperature</h3>
+              <div className="left-4 w-72 bg-card/80 backdrop-blur-sm rounded-lg p-4 border border-primary/20 shadow-lg z-50">
+                <h3 className="font-semibold text-sm mb-2">Live Current Temperature</h3>
                 <div className="grid grid-cols-1 gap-2">
-                  {globalStats.slice(0, 1).map((stat, index) => (
+                  {loadingTemp ? (
+                    <p className="text-sm text-muted-foreground">Detecting your location...</p>
+                  ) : tempError ? (
+                    <div className="text-sm text-red-500">
+                      {tempError}
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="text-primary p-0 ml-2 h-auto"
+                        onClick={() => window.location.reload()}
+                      >
+                        Try again
+                      </Button>
+                    </div>
+                  ) : currentTemp !== null ? (
                     <TemperatureDisplay
-                      key={index}
-                      current={stat.current}
-                      previous={stat.previous}
-                      location={stat.location}
+                      current={currentTemp}
+                      previous={null}
+                      location={locationName}
                       size="sm"
                     />
-                  ))}
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Location not available. Try searching above.
+                    </div>
+                  )}
                 </div>
               </div>
+              {/* This space can be used for your GlobeVisualization if you choose to add it later */}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Heat Alerts Section */}
-      <section className="py-16 bg-card/30 backdrop-blur-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-6 w-6 text-temp-hot animate-pulse" />
-                <Zap className="h-5 w-5 text-temp-extreme" />
+      {/* Rest of your existing sections remain unchanged */}
+                  <section className="py-16 bg-card/30 backdrop-blur-sm">
+              <div className="container mx-auto px-4">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-6 w-6 text-temp-hot animate-pulse" />
+                      <Zap className="h-5 w-5 text-temp-extreme" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Last 24h Heat Alerts</h2>
+                  </div>
+                  <Link to="/heatmap">
+                    <Button variant="ghost" className="text-primary hover:text-primary-glow">
+                      View All <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+
+                <HeatAlertList />
               </div>
-              <h2 className="text-2xl font-bold">Last 24h Heat Alerts</h2>
-            </div>
-            <Link to="/heatmap">
-              <Button variant="ghost" className="text-primary hover:text-primary-glow">
-                View All <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+</section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {heatAlerts.map((alert, index) => (
-              <HeatAlert key={index} {...alert} />
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Historical Spotlight */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -151,7 +266,7 @@ const Index = () => {
                   July 2023: Hottest Month on Record
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  July 2023 officially became the hottest month ever recorded globally, 
+                  July 2023 officially became the hottest month ever recorded globally,
                   with average temperatures reaching unprecedented levels across multiple continents.
                 </p>
                 <div className="flex flex-wrap gap-4 mb-4">
@@ -170,7 +285,7 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 {globalStats.map((stat, index) => (
                   <Card key={index} className="p-4 bg-card/50 border-primary/20">

@@ -1,26 +1,27 @@
+// HeatAlert.tsx (single alert card)
 import { AlertTriangle, Thermometer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
 interface HeatAlertProps {
-  location: string;
+  city: string;
   temperature: number;
-  severity: "warning" | "extreme";
-  time: string;
+  severity: "warning" | "extreme" | "normal";
+  time_ago: string;
 }
 
-const HeatAlert = ({ location, temperature, severity, time }: HeatAlertProps) => {
-  const getSeverityColors = (severity: string) => {
-    switch (severity) {
-      case "extreme":
-        return "bg-temp-extreme text-white border-temp-extreme animate-pulse-glow";
-      case "warning":
-        return "bg-temp-hot text-white border-temp-hot";
-      default:
-        return "bg-temp-warm text-white border-temp-warm";
-    }
-  };
+const getSeverityColors = (severity: string) => {
+  switch (severity) {
+    case "extreme":
+      return "bg-temp-extreme text-white border-temp-extreme animate-pulse-glow";
+    case "warning":
+      return "bg-temp-hot text-white border-temp-hot";
+    default:
+      return "bg-temp-warm text-white border-temp-warm";
+  }
+};
 
+export default function HeatAlert({ city, temperature, severity, time_ago }: HeatAlertProps) {
   return (
     <Card className="p-4 border-l-4 border-l-temp-hot animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -30,21 +31,15 @@ const HeatAlert = ({ location, temperature, severity, time }: HeatAlertProps) =>
             <Thermometer className="h-4 w-4 text-temp-extreme" />
           </div>
           <div>
-            <h4 className="font-semibold text-foreground">{location}</h4>
-            <p className="text-sm text-muted-foreground">{time}</p>
+            <h4 className="font-semibold text-foreground">{city}</h4>
+            <p className="text-sm text-muted-foreground">{time_ago}</p>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-temp-extreme">
-            {temperature}°C
-          </div>
-          <Badge className={getSeverityColors(severity)}>
-            {severity.toUpperCase()}
-          </Badge>
+          <div className="text-2xl font-bold text-temp-extreme">{temperature}°C</div>
+          <Badge className={getSeverityColors(severity)}>{severity.toUpperCase()}</Badge>
         </div>
       </div>
     </Card>
   );
-};
-
-export default HeatAlert;
+}

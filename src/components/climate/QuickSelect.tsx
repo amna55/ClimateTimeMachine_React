@@ -20,18 +20,16 @@ const QuickSelect = ({ preset, onSelect }: QuickSelectProps) => {
     }
   };
 
-  const getVariant = (index: number) => {
-    return index === 0 ? "default" : "outline";
-  };
+  const getVariant = (_item: string, _index: number) => "outline"; // all quick-select buttons use outline
 
   return (
     <div className="flex flex-wrap gap-3">
       {preset.map((item, index) => (
         <Button
           key={item}
-          variant={getVariant(index)}
+          variant={getVariant(item, index)}
           onClick={() => onSelect?.(item)}
-          className="flex items-center space-x-2 bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary hover:shadow-glow transition-all duration-300"
+          className="flex items-center space-x-2 bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary hover:shadow-glow transition-all duration-300 text-white"
         >
           {getIcon(item)}
           <span>{item}</span>
